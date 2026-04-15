@@ -1,153 +1,118 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <title>Danh sách sinh viên</title>
-    <style>
-        body { font-family: Arial; padding: 20px; }
-        table { border-collapse: collapse; width: 100%; text-align: center; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-        th { background-color: #f2f2f2; }
-    </style>
+<meta charset="UTF-8">
+<title>Danh sách sinh viên</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+    button { margin-bottom: 20px; }
+    table { border-collapse: collapse; width: 100%; text-align: center; }
+    th, td { border: 1px solid black; padding: 5px; }
+</style>
 </head>
+
 <body>
 
-<h2 style="text-align:center;"" >DANH SÁCH SINH VIÊN</h2>
+<h2 style="text-align:center;">DANH SÁCH SINH VIÊN</h2>
+
+<button onclick="chonFile()">Chọn file Excel</button>
+<input type="file" id="fileInput" style="display:none;">
 
 <table>
-    <thead>
-        <tr>
-            <th>STT</th>
-            <th>Họ tên</th>
-            <th>Mã SV</th>
-            <th>Email</th>
-            <th>Khóa</th>
-            <th>Khoa</th>
-        </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
+    <tr>
+        <th>STT</th>
+        <th>Họ tên</th>
+        <th>Mã SV</th>
+        <th>Email</th>
+        <th>Khóa</th>
+        <th>Khoa</th>
+    </tr>
+    <tbody id="ds"></tbody>
 </table>
 
 <script>
-// ===== HÀM BỎ DẤU =====
-function removeVietnameseTones(str) {
-    return str
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/đ/g, "d")
-        .replace(/Đ/g, "d")
-        .replace(/[^a-zA-Z0-9 ]/g, "");
+
+// mở file
+function chonFile() {
+    document.getElementById("fileInput").click();
 }
 
-// ===== CLASS =====
-class Student {
-    constructor(stt, fullName, studentId) {
-        this.stt = stt;
-        this.fullName = fullName;
-        this.studentId = studentId;
-        this.email = this.createEmail();
-        this.course = this.getCourse();
-        this.faculty = this.getFaculty();
-    }
-
-    createEmail() {
-        let name = this.fullName.replace("(LT)", "").trim();
-        name = removeVietnameseTones(name.toLowerCase());
-
-        let parts = name.split(" ");
-        let lastName = parts.pop();
-        let initials = parts.map(p => p[0]).join("");
-
-        return lastName + initials + "." + this.studentId.toLowerCase() + "@hvnh.edu.vn";
-    }
-
-    getCourse() {
-        return "K" + this.studentId.substring(0, 2);
-    }
-
-    getFaculty() {
-        let code = this.studentId.substring(3, 6);
-
-        let map = {
-            "404": "Công nghệ thông tin & Kinh tế số",
-            "402": "Kế toán kiểm toán",
-            "408": "Khoa học dữ liệu",
-            "405": "Kinh doanh quốc tế",
-            "407": "Kinh tế đầu tư",
-            "406": "Luật kinh tế",
-            "401": "Ngân hàng - Tài chính",
-            "751": "An toàn thông tin",
-            "403": "QTKD / Du lịch"
-        };
-
-        return map[code] || "Không rõ";
-    }
+// bỏ dấu
+function boDau(s) {
+    return s.normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/đ/g, "d")
+            .replace(/Đ/g, "d");
 }
 
-// ===== DATA =====
-let data = [
-    [1,"Ngô Hải An","27A4042905"],
-    [2,"Nguyễn Hữu An","26A4040701"],
-    [3,"Nguyễn Hoàng Anh","27A4042909"],
-    [4,"Nguyễn Việt Anh","27A4042911"],
-    [5,"Phùng Gia Bảo","26A4041215"],
-    [6,"Ngô Thị Huyền Diệu","27A4042917"],
-    [7,"Nguyễn Anh Dũng","27A4042919"],
-    [8,"Nông Lăng Đức Dương","27A4042923"],
-    [9,"Nguyễn Khắc Đạt","27A4042924"],
-    [10,"Nguyễn Thành Đạt","27A4043283"],
-    [11,"Phạm Trung Đức","27A4042926"],
-    [12,"Cao Vũ Thu Hà","27A4042929"],
-    [13,"Đồng Thị Hà","27A4042930"],
-    [14,"Hoàng Thị Ngọc Hà","27A4042931"],
-    [15,"Nguyễn Ngọc Hà","27A4042932"],
-    [16,"Vũ Thu Hiền","27A4042934"],
-    [17,"Trần Mạnh Hiếu","27A4042938"],
-    [18,"Huỳnh Lê Hoàng","25A4041541"],
-    [19,"Lê Việt Hoàng","26A4010899"],
-    [20,"Hoàng Thị Ngọc Linh","27A4042956"],
-    [21,"Nguyễn Huyền Linh","27A4042957"],
-    [22,"Nguyễn Nhật Linh","26A4041702"],
-    [23,"Nguyễn Thị Ngọc Linh","27A4043310"],
-    [24,"Ninh Phương Linh","26A4041705"],
-    [25,"Dương Thị Quỳnh Mai","27A4043315"],
-    [26,"Trịnh Thị Tuyết Mai","26A4041712"],
-    [27,"Nguyễn Thị Trà My","26A4041714"],
-    [28,"Đỗ Phương Nam","27A4042964"],
-    [29,"Ngọ Kim Ngân","27A4042967"],
-    [30,"Nguyễn Hà Tuấn Nghĩa","27A4042969"],
-    [31,"Trịnh Thị Nhâm","26A4042122"],
-    [32,"Hà Bảo Nhi","27A4042971"],
-    [33,"Nguyễn Thu Phương (LT)","27A4042976"],
-    [34,"Lại Minh Quân","26A4042135"],
-    [35,"Vũ Bảo Sơn","27A4042983"],
-    [36,"Phạm Đỗ Hà Thanh","27A4042984"],
-    [37,"Hoàng Phạm Thành","27A4042985"],
-    [38,"Nguyễn Tiến Thành","27A4042986"],
-    [39,"Nguyễn Thị Minh Thu (LT)","27A4042989"],
-    [40,"Phạm Hoa Thủy Tiên","27A4042992"],
-    [41,"Mai Thanh Tùng","27A4042999"],
-    [42,"Nguyễn Thế Tú","27A4042997"],
-    [43,"Nguyễn Khánh Vân","27A4043002"]
-];
+// khi chọn file
+document.getElementById("fileInput").onchange = function(e) {
 
-// ===== HIỂN THỊ =====
-let tbody = document.getElementById("tableBody");
+    var file = e.target.files[0];
+    var reader = new FileReader();
 
-for (let item of data) {
-    let sv = new Student(item[0], item[1], item[2]);
+    reader.onload = function(e) {
 
-    let row = "<tr>" +
-            "<td>" + sv.stt + "</td>" +
-            "<td>" + sv.fullName + "</td>" +
-            "<td>" + sv.studentId + "</td>" +
-            "<td>" + sv.email + "</td>" +
-            "<td>" + sv.course + "</td>" +
-            "<td>" + sv.faculty + "</td>" +
-        "</tr>";;
+        var data = new Uint8Array(e.target.result);
+        var wb = XLSX.read(data, {type: "array"});
+        var sheet = wb.Sheets[wb.SheetNames[0]];
 
-    tbody.innerHTML += row;
-}
+        var arr = XLSX.utils.sheet_to_json(sheet, {header:1});
+
+        var html = "";
+
+        for (var i = 1; i < arr.length; i++) {
+
+            var stt = arr[i][0];
+            var msv = arr[i][1];
+            var ten = arr[i][2]; // giữ nguyên hiển thị
+
+            if (ten && msv) {
+
+                // 👉 chỉ xử lý email (xóa LT)
+                var tenEmail = ten.replace(/\(lt\)/gi, "");
+
+                var t = boDau(tenEmail.toLowerCase());
+                var a = t.trim().split(" ");
+
+                var tenCuoi = a[a.length - 1];
+
+                var vietTat = "";
+                for (var j = 0; j < a.length - 1; j++) {
+                    vietTat += a[j][0];
+                }
+
+                var email = tenCuoi + vietTat + "." + msv.toLowerCase() + "@hvnh.edu.vn";
+
+                // khóa
+                var khoaHoc = "K" + msv.substring(0,2);
+
+                // khoa
+                var ma = msv.substring(3,6);
+                var khoa = "Không rõ";
+
+                if (ma == "404") khoa = "Công nghệ thông tin & Kinh tế số";
+
+                // hiển thị (GIỮ NGUYÊN TÊN)
+                html += "<tr>" +
+                    "<td>" + stt + "</td>" +
+                    "<td>" + ten + "</td>" +
+                    "<td>" + msv + "</td>" +
+                    "<td>" + email + "</td>" +
+                    "<td>" + khoaHoc + "</td>" +
+                    "<td>" + khoa + "</td>" +
+                "</tr>";
+            }
+        }
+
+        document.getElementById("ds").innerHTML = html;
+    };
+
+    reader.readAsArrayBuffer(file);
+};
+
 </script>
 
 </body>
