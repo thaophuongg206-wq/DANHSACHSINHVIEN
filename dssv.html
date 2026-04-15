@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Danh sách sinh viên</title>
+
+    <!-- Thư viện đọc Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        /* khoảng cách button */
+        button {
+            margin-bottom: 20px;
+            padding: 10px 20px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            text-align: center;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>DANH SÁCH SINH VIÊN</h2>
+
+<!-- Button chọn file -->
+<button id="btnFile">📁 Chọn file Excel</button>
+
+<!-- Input file ẩn -->
+<input type="file" id="fileInput" accept=".xlsx, .xls" style="display:none;">
+
+<!-- Bảng -->
+<table>
+    <thead>
+        <tr>
+            <th>STT</th>
+            <th>Họ tên</th>
+            <th>Mã SV</th>
+            <th>Email</th>
+            <th>Khóa</th>
+            <th>Khoa</th>
+        </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+</table>
+
+<script>
+
+// ===== CLICK BUTTON =====
+document.getElementById("btnFile").onclick = function () {
+    document.getElementById("fileInput").click();
+};
+
+// ===== BỎ DẤU =====
+function boDau(str) {
+    return str
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "d");
+}
+
+// ===== CLASS =====
+function Student(stt, ten, msv) {
+    this.stt = stt;
+    this.ten = ten;
+    this.msv = msv;
+
+    this.taoEmail = function () {
+        var tenEmail = this.ten.replace(/\(lt\)/gi, ""); // xóa (LT)
+        var name = boDau(tenEmail.toLowerCase());        var parts = name.trim().split(" ");
+
+        var tenCuoi = parts.pop();
+        var chuCaiDau = "";
+
+        for (var i = 0; i < parts.length; i++) {
+            chuCaiDau += parts[i][0];
+        }
+
+        return tenCuoi + chuCaiDau + "." + this.msv.toLowerCase() + "@hvnh.edu.vn";
+    };
+
+    this.layKhoaHoc = function () {
+        return "K" + this.msv.substring(0, 2);
+    };
+
+    this.layKhoa = function () {
+        var ma = this.msv.substring(3, 6);
+
+        if (ma === "404") return "Công nghệ thông tin & Kinh tế số";
+        if (ma === "402") return "Kế toán - kiểm toán";
+        if (ma === "408") return "Khoa học dữ liệu";
+        if (ma === "405") return "Kinh doanh quốc tế";
+        if (ma === "407") return "Kinh tế đầu tư";
+        if (ma === "406") return "Luật kinh tế";
+        if (ma === "401") return "Tài chính - Ngân hàng";
+        if (ma === "403") return "Quản trị kinh doanh";
+
+        return "Không rõ";
+    };
+}
+
+// ===== ĐỌC FILE EXCEL (CHẮC CHẮN CHẠY) =====
+document.getElementById("fileInput").addEventListener("change", function (e) {
+
+    var file = e.target.files[0];
+    if (!file) return;
+
+    var reader = new FileReader();
+
+    reader.onload = function (e) {
+
+        var data = new Uint8Array(e.target.result);
+        var workbook = XLSX.read(data, { type: "array" });
+
+        var sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+        // đọc dạng mảng (không phụ thuộc tên cột)
+        var arr = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        var tbody = document.getElementById("tableBody");
+        tbody.innerHTML = "";
+
+        for (var i = 1; i < arr.length; i++) {
+
+            var stt = arr[i][0];
+            var msv = arr[i][1];
+            var ten = arr[i][2];
+
+            if (ten && msv) {
+                var sv = new Student(stt, ten, msv);
+
+                var row = "<tr>" +
+                    "<td>" + sv.stt + "</td>" +
+                    "<td>" + sv.ten + "</td>" +
+                    "<td>" + sv.msv + "</td>" +
+                    "<td>" + sv.taoEmail() + "</td>" +
+                    "<td>" + sv.layKhoaHoc() + "</td>" +
+                    "<td>" + sv.layKhoa() + "</td>" +
+                "</tr>";
+
+                tbody.innerHTML += row;
+            }
+        }
+    };
+
+    reader.readAsArrayBuffer(file);
+});
+
+</script>
+
+</body>
+</html>
